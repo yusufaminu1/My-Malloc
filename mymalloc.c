@@ -22,7 +22,7 @@ static void leak_detector(){
             size+=chunk->size;
         }
         chunk = next_chunk(chunk);
-        if(!inside_heap){
+        if(!inside_heap(chunk)){
             break;
         }
     }
@@ -33,8 +33,8 @@ static void leak_detector(){
 void initialize_heap(){
     chunk_header init = {MEMLENGTH-sizeof(chunk_header),0};
     *(chunk_header *)heap.bytes = init;
-    atexit(leak_detector);
     intialized = 1;
+    atexit(leak_detector);
 }
 static chunk_header *next_chunk(chunk_header *h){
     return (chunk_header *)((sizeof(chunk_header)+h->size) + (char *)h);
