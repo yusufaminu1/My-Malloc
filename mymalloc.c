@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include<stdlib.h>
 #define MEMLENGTH 4096
 static union {
     char bytes[MEMLENGTH];
@@ -15,7 +16,7 @@ static size_t round8(size_t sz) {
 static chunk_header *next_chunk(chunk_header *h);
 static int inside_heap(void *ptr);
 static void leak_detector(){
-    chunk_header *chunk = heap.bytes;
+    chunk_header *chunk = (chunk_header *)heap.bytes;
     int objects = 0;
     int size = 0;
     while(1){
@@ -52,7 +53,7 @@ void *mymalloc(size_t size, char *file, int line){
     if(!initialized) initialize_heap();
     if(size == 0) return NULL;
     size = round8(size);
-    chunk_header *chunk = heap.bytes;
+    chunk_header *chunk = (chunk_header *)heap.bytes;
     while(1){
         if(chunk->allocated == 0 && chunk->size >= size){
             if(chunk->size -size >= 16){
@@ -77,7 +78,7 @@ void *mymalloc(size_t size, char *file, int line){
     }
 }
 void   myfree (void *ptr, char *file, int line){
-  if(inside_heap(ptr)) {
+  if(!inside_heap(ptr)) {
     fprintf(stderr,"free: Innapropriate pointersodoes (%s:%d)\n", file, line);
     exit(2);
   }
