@@ -56,7 +56,7 @@ void *mymalloc(size_t size, char *file, int line){
     chunk_header *chunk = (chunk_header *)heap.bytes;
     while(1){
         if(chunk->allocated == 0 && chunk->size >= size){
-            if(chunk->size -size >= 16){
+            if(chunk->size -size >= sizeof(chunk_header) + 16){
                 int newSize = chunk->size - (sizeof(chunk_header)+size);
                 chunk_header newChunk = {newSize, 0};
                 *(chunk_header *)((char *)chunk + size +sizeof(chunk_header)) = newChunk;
@@ -83,6 +83,7 @@ void myfree (void *ptr, char *file, int line){
     exit(2);
   }
   chunk_header *chunk = (chunk_header*)heap.bytes;
+  chunk_header *prev = NULL;
   while(inside_heap(chunk)) {
     void *payload = (void*)(chunk + 1);
     if(payload == ptr) {
@@ -96,8 +97,12 @@ void myfree (void *ptr, char *file, int line){
         if (!inside_heap(next) || next ->allocated == 1) { break; }
         chunk->size += sizeof(chunk_header) + next->size;
       }
+      if(prev != NULL && prev->allocated == 0) {
+        prev->size += sizeof(chunk_header) + chunk->size;
+      }
       return;
     }
+    prev = chunk;
     chunk = next_chunk(chunk);
   }
 

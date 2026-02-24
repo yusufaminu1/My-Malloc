@@ -1,6 +1,8 @@
-#include "mymalloc.h"
-#include <sys/time.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <sys/time.h>
+#include "mymalloc.h"
 typedef struct Node {
   int data;
   struct Node *next;
@@ -36,13 +38,13 @@ int main() {
   }
   gettimeofday(&end, NULL);
   elapsed = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-  printf("Average time for task 2: %f microseconds", (double)elapsed / 50);
+  printf("\nAverage time for task 2: %f microseconds", (double)elapsed / 50);
     
 
   //task three
   gettimeofday(&start, NULL);
   for(int j = 0; j < 50; j++) {
-    char *arrTwo[120];
+    char *arrTwo[120] = {NULL};
     int allocations = 0;
     while (allocations != 120) {
       int random = rand() % 2;
@@ -66,7 +68,7 @@ int main() {
   }
   gettimeofday(&end, NULL);
   elapsed = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-  printf("Average time for task 3: %f microseconds", (double)elapsed / 50);
+  printf("\nAverage time for task 3: %f microseconds", (double)elapsed / 50);
 
   //task four
   gettimeofday(&start, NULL);
@@ -97,7 +99,7 @@ int main() {
   }
   gettimeofday(&end, NULL);
   elapsed = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-  printf("Average time for task 4: %f microseconds", (double)elapsed / 50);
+  printf("\nAverage time for task 4: %f microseconds", (double)elapsed / 50);
 
   //task five
   gettimeofday(&start, NULL);
@@ -120,7 +122,7 @@ int main() {
   }
   gettimeofday(&end, NULL);
   elapsed = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
-  printf("Average time for task 5: %f microseconds", (double)elapsed / 50);
+  printf("\nAverage time for task 5: %f microseconds\n", (double)elapsed / 50);
 
   return 0;
 }
