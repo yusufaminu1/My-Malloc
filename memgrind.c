@@ -121,5 +121,7 @@ int main() {
   gettimeofday(&end, NULL);
   elapsed = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
   printf("Average time for task 5: %f microseconds", (double)elapsed / 50);
+
+  return 0;
 }
 
