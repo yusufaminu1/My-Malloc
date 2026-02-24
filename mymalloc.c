@@ -33,7 +33,7 @@ static void leak_detector(){
         fprintf(stderr, "mymalloc: %d bytes leaked in %d objects.\n", size, objects);
     }
 }
-void initialize_heap(){
+static void initialize_heap(){
     chunk_header init = {MEMLENGTH-sizeof(chunk_header),0};
     *(chunk_header *)heap.bytes = init;
     initialized = 1;
@@ -64,7 +64,6 @@ void *mymalloc(size_t size, char *file, int line){
                 chunk->allocated = 1;
                 return (char *)(chunk) +sizeof(chunk_header);
             }else{
-                chunk->size = size;
                 chunk->allocated = 1;
                 return (char *)(chunk) +sizeof(chunk_header);
             }
@@ -79,7 +78,7 @@ void *mymalloc(size_t size, char *file, int line){
 }
 void myfree (void *ptr, char *file, int line){
   if(!inside_heap(ptr)) {
-    fprintf(stderr,"free: Innapropriate pointersodoes (%s:%d)\n", file, line);
+    fprintf(stderr,"free: Innapropriate pointer (%s:%d)\n", file, line);
     exit(2);
   }
   chunk_header *chunk = (chunk_header*)heap.bytes;
