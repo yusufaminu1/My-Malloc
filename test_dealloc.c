@@ -2,25 +2,23 @@
 #include <stdlib.h>
 #include "mymalloc.h"
 
-/* Test 1: free() actually deallocates memory
- * Fill the heap with 120 1-byte objects, free them all,
- * then allocate 120 more. If free() works, this should succeed. */
+
 static int test_free_deallocates() {
-    char *ptrs[120];
+    char *ptrs[200];
     int i;
 
-    for (i = 0; i < 120; i++) {
+    for (i = 0; i < 200; i++) {
         ptrs[i] = malloc(1);
         if (ptrs[i] == NULL) {
             printf("FAIL test_free_deallocates: malloc returned NULL on allocation %d\n", i);
             return 1;
         }
     }
-    for (i = 0; i < 120; i++) {
+    for (i = 0; i < 200; i++) {
         free(ptrs[i]);
     }
-    /* Allocate again — should succeed since memory was freed */
-    for (i = 0; i < 120; i++) {
+
+    for (i = 0; i < 200; i++) {
         ptrs[i] = malloc(1);
         if (ptrs[i] == NULL) {
             printf("FAIL test_free_deallocates: malloc returned NULL on re-allocation %d"
@@ -28,29 +26,26 @@ static int test_free_deallocates() {
             return 1;
         }
     }
-    for (i = 0; i < 120; i++) {
+    for (i = 0; i < 200; i++) {
         free(ptrs[i]);
     }
     printf("PASS test_free_deallocates\n");
     return 0;
 }
 
-/* Test 2: Adjacent free chunks are coalesced
- * Fill the heap with 120 1-byte objects, free them all,
- * then request a 2000-byte allocation. This only succeeds if
- * the freed chunks were coalesced back into one large free block. */
+
 static int test_coalescing() {
-    char *ptrs[120];
+    char *ptrs[200];
     int i;
 
-    for (i = 0; i < 120; i++) {
+    for (i = 0; i < 200; i++) {
         ptrs[i] = malloc(1);
         if (ptrs[i] == NULL) {
             printf("FAIL test_coalescing: malloc returned NULL on allocation %d\n", i);
             return 1;
         }
     }
-    for (i = 0; i < 120; i++) {
+    for (i = 0; i < 200; i++) {
         free(ptrs[i]);
     }
 

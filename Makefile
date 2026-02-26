@@ -5,7 +5,6 @@ TESTS = memtest test_dealloc test_errorbadptr test_errormidptr test_errordoublef
         test_coalesce_order test_chunk_refill test_randomnoleak test_toolarge \
         test_nonadjacent test_toolarge_coalesced test_randomleak
 
-# On Windows gcc produces .exe files; on Linux no extension is needed.
 ifeq ($(OS),Windows_NT)
     EXE = .exe
 else
