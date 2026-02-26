@@ -4,22 +4,19 @@ AUTHORS
 Yusuf Aminu    (yta12)
 Tyler Bertrand (tjb309)
 
+
 TEST PLAN
 
-  - malloc() returns non-overlapping memory regions.
-  - free() actually releases memory for reuse.
-  - Adjacent free chunks coalesce into a single larger chunk,
-     both in sequential and non-sequential free order.
-  - The three detectable free() misuse errors are caught,
-     reported to stderr, and terminate the process with exit(2).
-  - malloc() returns NULL and prints to stderr when no free chunk
-     is large enough, whether the heap is fragmented or just full.
-  - The leak detector reports any unreleased objects at exit.
+We tested for:
+  - malloc() giving back non-overlapping regions
+  - free() actually releasing memory so it can be reused
+  - adjacent free chunks merging back together (both in order and out of order)
+  - the three bad free() cases being caught, printed to stderr, and killed with exit(2)
+  - malloc() returning NULL when there's no room, whether the heap is full or fragmented
+  - the leak detector catching anything left over at exit
 
 
-
-TEST PROGRAMS
-
+TEST PROGRAMS:
 
 All test programs take no command-line arguments.
 
@@ -28,14 +25,13 @@ test_dealloc
 ------------------------------------------------------------
 
 Test 1 - Deallocation:
-  Allocate 200 one-byte objects (filling most of the heap).
-  Free all 200. Allocate 200 more. If free() does not actually
-  release memory the second round fails with NULL returns.
+  Allocates 200 one-byte objects, frees them all, then tries to allocate 200 more.
+  If free() is broken and doesn't actually release memory, the second round runs
+  out of heap and returns NULL.
 
 Test 2 - Basic coalescing:
-  Allocate 200 one-byte objects, free them all, then request a
-  2000-byte block. This only succeeds if the freed chunks merged
-  back into one contiguous free region.
+  Allocates 200 one-byte objects, frees them all, then asks for a 2000-byte block.
+  Only works if the freed chunks got merged back into one big free region.
 
 Expected output:
     PASS test_free_deallocates
@@ -45,14 +41,10 @@ Expected output:
 test_coalesce_order
 ------------------------------------------------------------
 
-Allocates 4 chunks of 1016 bytes each (4 * 1024 = 4096 bytes,
-filling the heap exactly). Frees them in order: 1st, 3rd, 2nd,
-4th. Freeing the 2nd triggers a forward coalesce with the already-
-free 3rd and a backward coalesce with the already-free 1st;
-freeing the 4th triggers a backward coalesce with the merged
-block. After all frees the heap must be one contiguous free block,
-verified by a single 4088-byte allocation that would fail if any
-fragment remained.
+Allocates 4 chunks of 1016 bytes (fills the heap), then frees them in the order
+1st, 3rd, 2nd, 4th to make sure coalescing works even when chunks are freed
+out of order. At the end, tries a single 4088-byte allocation to confirm the
+heap is fully merged.
 
 Expected output:
     PASS test_coalesce_order
@@ -61,10 +53,9 @@ Expected output:
 test_chunk_refill
 ------------------------------------------------------------
 
-Phase 1: 64 chunks of 56 bytes (64 * 64 = 4096, fills heap).
-Phase 2: after freeing all 64, allocate 32 chunks of 120 bytes
-(32 * 128 = 4096, fills heap). If coalescing failed after phase 1
-the second wave of larger allocations would return NULL.
+Fills the heap with 64 chunks of 56 bytes, frees them all, then allocates
+32 chunks of 120 bytes. If coalescing failed after the first round, the
+second wave of larger allocations would return NULL.
 
 Expected output:
     PASS test_chunk_refill
@@ -73,11 +64,9 @@ Expected output:
 test_randomnoleak
 ------------------------------------------------------------
 
-Maintains an array of up to 120 pointers. On each step, randomly
-chooses to allocate a new 1-byte object or free a randomly chosen
-live object. Once 120 total allocations have been made, frees all
-remaining live pointers. Uses a fixed seed (12345) for
-reproducibility. The leak detector at exit must report nothing.
+Randomly allocates and frees 1-byte objects using a fixed seed (12345) so
+it's reproducible. After 120 total allocations, everything still alive gets
+freed. The leak detector should have nothing to report.
 
 Expected output:
     PASS test_randomnoleak (leak detector should report nothing on stderr)
@@ -87,8 +76,8 @@ Expected stderr: (empty)
 test_toolarge
 ------------------------------------------------------------
 
-Requests 5000 bytes from a heap whose maximum payload is 4088
-bytes. malloc() must return NULL and print an error to stderr.
+Asks for 5000 bytes from a heap that can only hold 4088. malloc() should
+return NULL and print an error to stderr.
 
 Expected output:
     PASS test_toolarge (malloc correctly returned NULL, error on stderr)
@@ -99,10 +88,7 @@ Expected stderr:
 test_errordoublefree
 ------------------------------------------------------------
 
-Allocates an object, frees it, then calls free() a second time
-via a second pointer holding the same address. After the first
-free the chunk is marked unallocated; myfree() detects the second
-call and exits with code 2.
+Frees a pointer twice. The second call should be caught and exit with code 2.
 
 Expected stderr:
     free: Innapropriate pointer (test_errordoublefree.c:<line>)
@@ -112,10 +98,8 @@ Expected exit code: 2
 test_errormidptr
 ------------------------------------------------------------
 
-Allocates a two-int object and calls free() on (p + 1), which is
-4 bytes past the payload start. myfree() walks the heap, finds
-no chunk whose payload begins at that address, and exits with
-code 2.
+Calls free() on a pointer that's 4 bytes into a payload (not the start).
+myfree() walks the heap, can't find a matching chunk, and exits with code 2.
 
 Expected stderr:
     free: Innapropriate pointer (test_errormidptr.c:<line>)
@@ -125,9 +109,8 @@ Expected exit code: 2
 test_errorbadptr
 ------------------------------------------------------------
 
-Calls free() on the address of a local stack variable. myfree()
-detects that the address falls outside the heap bounds and exits
-with code 2.
+Calls free() on a stack variable. myfree() sees it's outside the heap and
+exits with code 2.
 
 Expected stderr:
     free: Innapropriate pointer (test_errorbadptr.c:<line>)
@@ -137,11 +120,9 @@ Expected exit code: 2
 test_nonadjacent
 ------------------------------------------------------------
 
-Fills the heap with 4 chunks of 1016 bytes each, then frees only
-the 1st and 4th. The two free chunks are separated by two
-allocated chunks so they cannot coalesce. A 1500-byte request
-(rounded to 1504) exceeds either free block individually, so
-malloc() must return NULL.
+Fills the heap with 4 chunks of 1016 bytes, then frees only the 1st and 4th.
+Since they're separated by two allocated chunks they can't coalesce, so a
+1500-byte request should fail with NULL.
 
 Expected output:
     PASS test_nonadjacent (malloc correctly returned NULL, error on stderr)
@@ -152,11 +133,9 @@ Expected stderr:
 test_toolarge_coalesced
 ------------------------------------------------------------
 
-Fills the heap with 64 chunks of 56 bytes, frees them all
-(producing a fully coalesced 4088-byte free block), then requests
-5000 bytes. This verifies both that coalescing succeeded (the 64
-individual frees worked) and that even a fully coalesced heap
-cannot satisfy a request exceeding its capacity.
+Fills the heap with 64 small chunks, frees them all (so the heap is one big
+free block), then asks for 5000 bytes. Even after full coalescing the heap
+can't fit it, so malloc() should return NULL.
 
 Expected output:
     PASS test_toolarge_coalesced (malloc correctly returned NULL, error on stderr)
@@ -167,10 +146,8 @@ Expected stderr:
 test_leak
 ------------------------------------------------------------
 
-
-Allocates 10 objects of 8 bytes each (80 bytes total) and exits
-without freeing them. The leak detector registered with atexit()
-must fire and report the count and total size.
+Allocates 10 objects of 8 bytes and exits without freeing any of them.
+The leak detector should catch all 80 bytes.
 
 Expected stderr:
     mymalloc: 80 bytes leaked in 10 objects.
@@ -179,73 +156,59 @@ Expected stderr:
 test_randomleak
 ------------------------------------------------------------
 
-
-Performs the same random alloc/free pattern as test_randomnoleak
-(same seed) but intentionally skips freeing odd-indexed survivors.
-The leak detector must detect and report the unreleased objects.
+Same random pattern as test_randomnoleak (same seed), but intentionally
+skips freeing the odd-indexed survivors. The leak detector should report
+the leftover objects.
 
 Expected stderr:
     mymalloc: <N> bytes leaked in <M> objects.
 
 
 
-MEMGRIND STRESS TASKS
+MEMGRIND STRESS TASKS:
 
 
-memgrind runs each task 50 times and reports the average elapsed
-time in microseconds using gettimeofday().
+memgrind runs each task 50 times and reports the average time in microseconds.
 
-Task 1 - 3: 
+Task 1 - 3:
   Followed directions
 
 Task 4 - Linked list:
-  Build a singly-linked list of 30 Node structs (each holding an
-  int and a next pointer) using malloc(), then traverse the list
-  and free every node. Simulates a common real-world pattern of
-  allocating same-sized structs and freeing them via pointer chase.
+  Builds a 30-node linked list using malloc(), walks it, and frees every node.
 
 Task 5 - 2D matrix:
-  Allocate a 20-element array of char pointers, then allocate a
-  20-char row for each pointer (simulating a 20x20 char matrix).
-  Fill every cell with (row + col). Free each row individually,
-  then free the pointer array. Tests a two-level dynamic
-  allocation pattern with mixed object sizes.
+  Allocates a 20-element array of char pointers, then a 20-char row for each one
+  (20x20 matrix). Fills every cell with (row + col), then frees each row and
+  the pointer array.
 
 
 
-DESIGN NOTES
+DESIGN NOTES:
 
 
 Minimum chunk size:
-  16 bytes (8-byte header + 8-byte minimum payload). Before
-  splitting, mymalloc() checks that the leftover region would
-  contain at least sizeof(chunk_header) + 16 bytes; otherwise the
-  entire chunk is given to the caller unsplit.
+  16 bytes (8-byte header + 8-byte minimum payload). We only split a chunk if
+  the leftover would have at least sizeof(chunk_header) + 16 bytes; otherwise
+  the whole chunk goes to the caller.
 
 Alignment:
-  All requested sizes are rounded up to the nearest multiple of 8
-  using: (size + 7) & ~7
+  Sizes are rounded up to the nearest multiple of 8 with: (size + 7) & ~7
 
 Traversal:
-  next_chunk(h) returns (char*)h + sizeof(chunk_header) + h->size.
-  The first chunk always starts at heap.bytes[0]. Iteration stops
-  when the resulting pointer falls outside the heap bounds.
+  next_chunk(h) = (char*)h + sizeof(chunk_header) + h->size. We start at
+  heap.bytes[0] and stop when the next pointer falls outside the heap.
 
 Initialization:
-  A static flag guards a one-time call to initialize_heap(), which
-  writes a single free chunk header covering all 4088 available
-  payload bytes and registers leak_detector() with atexit(). Both
-  mymalloc() and myfree() trigger initialization on first call so
-  clients never need to call an init function explicitly.
+  A static flag makes sure initialize_heap() only runs once. It sets up a
+  single free chunk covering all 4088 bytes and registers the leak detector
+  with atexit(). First call to malloc() or free() triggers it automatically.
 
-Coalescing (performed inside myfree):
-  Forward:  after marking a chunk free, repeatedly absorb the
-            immediate successor chunk while it is also free.
-  Backward: if the predecessor chunk (tracked by the prev pointer
-            during traversal) is already free, absorb the newly
-            freed chunk into it.
+Coalescing (inside myfree):
+  Forward:  after marking a chunk free, absorb the next chunk if it's also free.
+            Keep going until we hit an allocated chunk or the end of the heap.
+  Backward: if the previous chunk is already free, absorb the newly freed chunk
+            into it.
 
 Error handling:
-  All three detectable free() errors print to stderr and call
-  exit(2). mymalloc() prints to stderr and returns NULL when no
-  free chunk is large enough to satisfy the request.
+  Bad free() calls print to stderr and call exit(2). malloc() prints to stderr
+  and returns NULL when there's no chunk big enough.
