@@ -9,49 +9,20 @@ Yusuf Aminu    (yta12)
 Tyler Bertrand (tjb309)
 
 ========================================
-BUILDING
-========================================
-
-Run:
-    make
-
-This produces the following executables:
-    memgrind                 - stress / timing test
-    memtest                  - non-overlapping allocation test
-    test_dealloc             - free deallocates + basic coalescing
-    test_errorbadptr         - error: free non-heap pointer
-    test_errormidptr         - error: free mid-chunk pointer
-    test_errordoublefree     - error: double free
-    test_leak                - leak detection (simple)
-    test_coalesce_order      - coalescing with non-sequential frees
-    test_chunk_refill        - 64-chunk fill/free/32-chunk refill
-    test_randomnoleak        - randomized alloc/free, no leaks
-    test_toolarge            - malloc rejects oversized request
-    test_nonadjacent         - non-adjacent free blocks cannot coalesce
-    test_toolarge_coalesced  - oversized request after full coalesce
-    test_randomleak          - randomized alloc/free with deliberate leaks
-
-Run:
-    make clean
-
-to remove all executables and object files.
-
-
-========================================
 TEST PLAN
 ========================================
 
 Our testing strategy maps directly to the correctness requirements:
 
-  1. malloc() returns non-overlapping memory regions.
-  2. free() actually releases memory for reuse.
-  3. Adjacent free chunks coalesce into a single larger chunk,
+  - malloc() returns non-overlapping memory regions.
+  - free() actually releases memory for reuse.
+  - Adjacent free chunks coalesce into a single larger chunk,
      both in sequential and non-sequential free order.
-  4. The three detectable free() misuse errors are caught,
+  - The three detectable free() misuse errors are caught,
      reported to stderr, and terminate the process with exit(2).
-  5. malloc() returns NULL and prints to stderr when no free chunk
+  - malloc() returns NULL and prints to stderr when no free chunk
      is large enough, whether the heap is fragmented or just full.
-  6. The leak detector reports any unreleased objects at exit.
+  - The leak detector reports any unreleased objects at exit.
 
 For every requirement we identify a concrete detection method and
 write a program whose output changes clearly when the requirement
@@ -64,18 +35,17 @@ TEST PROGRAMS
 
 All test programs take no command-line arguments.
 
-
 ------------------------------------------------------------
 test_dealloc
 ------------------------------------------------------------
 
 Test 1 - Deallocation:
-  Allocate 120 one-byte objects (filling most of the heap).
-  Free all 120. Allocate 120 more. If free() does not actually
+  Allocate 200 one-byte objects (filling most of the heap).
+  Free all 200. Allocate 200 more. If free() does not actually
   release memory the second round fails with NULL returns.
 
 Test 2 - Basic coalescing:
-  Allocate 120 one-byte objects, free them all, then request a
+  Allocate 200 one-byte objects, free them all, then request a
   2000-byte block. This only succeeds if the freed chunks merged
   back into one contiguous free region.
 
