@@ -1,18 +1,10 @@
-========================================
-Project 1: My Little malloc()
-CS 214 Spring 2026
-========================================
 
 AUTHORS
 -------
 Yusuf Aminu    (yta12)
 Tyler Bertrand (tjb309)
 
-========================================
 TEST PLAN
-========================================
-
-Our testing strategy maps directly to the correctness requirements:
 
   - malloc() returns non-overlapping memory regions.
   - free() actually releases memory for reuse.
@@ -24,14 +16,10 @@ Our testing strategy maps directly to the correctness requirements:
      is large enough, whether the heap is fragmented or just full.
   - The leak detector reports any unreleased objects at exit.
 
-For every requirement we identify a concrete detection method and
-write a program whose output changes clearly when the requirement
-is violated.
 
 
-========================================
 TEST PROGRAMS
-========================================
+
 
 All test programs take no command-line arguments.
 
@@ -200,30 +188,15 @@ Expected stderr:
     mymalloc: <N> bytes leaked in <M> objects.
 
 
-========================================
+
 MEMGRIND STRESS TASKS
-========================================
+
 
 memgrind runs each task 50 times and reports the average elapsed
 time in microseconds using gettimeofday().
 
-Task 1 - Immediate malloc/free:
-  malloc() and immediately free() a 1-byte object, repeated 120
-  times per run. Tests the fast path where a freshly freed chunk
-  is reallocated right away with minimal fragmentation.
-
-Task 2 - Batch malloc then batch free:
-  Allocate 120 one-byte objects storing all pointers in an array,
-  then free all 120 in order. Tests allocation under a nearly-full
-  heap and bulk deallocation followed by forward coalescing.
-
-Task 3 - Random alloc/free:
-  Maintain an array of up to 120 pointers. On each iteration
-  randomly choose to either allocate a new one-byte object or free
-  a randomly chosen already-allocated object. Once 120 total
-  allocations have been made, free all remaining live pointers.
-  Tests interleaved allocation and deallocation patterns that
-  produce fragmentation.
+Task 1 - 3: 
+  Followed directions
 
 Task 4 - Linked list:
   Build a singly-linked list of 30 Node structs (each holding an
@@ -239,9 +212,9 @@ Task 5 - 2D matrix:
   allocation pattern with mixed object sizes.
 
 
-========================================
+
 DESIGN NOTES
-========================================
+
 
 Minimum chunk size:
   16 bytes (8-byte header + 8-byte minimum payload). Before
